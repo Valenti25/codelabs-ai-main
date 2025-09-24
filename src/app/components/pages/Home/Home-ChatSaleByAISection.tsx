@@ -6,12 +6,10 @@ import {
   motion,
   type Variants,
   useMotionValue,
-  useSpring,
   MotionConfig,
   useReducedMotion,
 } from "framer-motion";
-import type { PanInfo } from "framer-motion";
-import LightningUnderline  from "@/app/components/ui/LightningUnderline";
+import LightningUnderline from "@/app/components/ui/LightningUnderline";
 import { ArrowDown, ShoppingCart, UserRound, Briefcase, LineChart } from "lucide-react";
 import { LayoutGroup } from "framer-motion";
 const CARD_W = 400;
@@ -75,7 +73,6 @@ type CSSVarStyles = React.CSSProperties & Record<`--${string}`, string | number>
 
 type ChatGroupKey = "customers" | "executives" | "consultants";
 
-/* ---------- Demo data ---------- */
 const GROUPS: Record<ChatGroupKey, Scenario[]> = {
   customers: [
     {
@@ -286,7 +283,7 @@ function ChartCard({ src, title, onLoad }: { src: string; title?: string; onLoad
   );
 }
 
-function SummaryTableCard({}: { title?: string }) {
+function SummaryTableCard({ }: { title?: string }) {
   return <CardWrap />;
 }
 
@@ -376,7 +373,6 @@ function BubbleSwap({ children, delay = 7000 }: { children: React.ReactNode; del
   return <>{children}</>;
 }
 
-/* ---------- Timeline ---------- */
 type TimelineUser = { kind: "user"; key: string; text: string };
 type TimelineAssistant = { kind: "assistant"; key: string; text: string };
 type TimelineCard = { kind: "card"; key: string; idx: number; scenario: Scenario };
@@ -407,10 +403,8 @@ function ScrollableChat({ scenarios }: { scenarios: Scenario[] }) {
   const L = MASTER.length || 1;
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const contentRef = useRef<HTMLDivElement | null>(null);
 
   const y = useMotionValue(0);
-  const ySmooth = useSpring(y, SPRING_SCROLL);
   const [minY, setMinY] = useState(0);
   const [autoFollow, setAutoFollow] = useState(true);
 
@@ -452,28 +446,24 @@ function ScrollableChat({ scenarios }: { scenarios: Scenario[] }) {
     };
   }, []);
 
-  useLayoutEffect(() => {
-    const calc = () => {
-      const vp = viewportRef.current;
-      const ct = contentRef.current;
-      if (!vp || !ct) return;
-      const min = Math.min(0, vp.clientHeight - ct.scrollHeight);
-      setMinY(min);
-      const cur = y.get();
-      if (cur < min) y.set(min);
-      if (cur > 0) y.set(0);
-    };
-    calc();
-    const ro = new ResizeObserver(calc);
-    if (viewportRef.current) ro.observe(viewportRef.current);
-    if (contentRef.current) ro.observe(contentRef.current);
-    return () => ro.disconnect();
-  }, [y, items.length]);
+  const prevLenRef = useRef(0);
 
-  // ป้องกัน scroll jump ทันทีที่ render card ที่ต้องรอรูปโหลด
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+
+    const nearBottom = vp.scrollHeight - (vp.scrollTop + vp.clientHeight) <= 500;
+    requestAnimationFrame(() => {
+      if (!vp) return;
+      if (nearBottom) {
+        vp.scrollTo({ top: vp.scrollHeight, behavior: "smooth" });
+      }
+    });
+  }, [items.length]);
+
+
   const pendingImageRef = useRef(false);
   useEffect(() => {
-    // ถ้ามี card ที่เป็น chart (isChart) ใน items ล่าสุด ให้รอ onLoad ก่อน
     const lastItem = items[items.length - 1]?.item;
     const isChart = lastItem && lastItem.kind === "card" && !((lastItem.idx === 0) && lastItem.scenario.products) && !!lastItem.scenario.product.image;
     if (isChart) {
@@ -484,26 +474,12 @@ function ScrollableChat({ scenarios }: { scenarios: Scenario[] }) {
     if (autoFollow) y.set(minY);
   }, [items.length, minY, autoFollow, y, items]);
 
-  useEffect(() => {
-    const vp = viewportRef.current;
-    if (!vp) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const next = Math.max(Math.min(y.get() - e.deltaY, 0), minY);
-      y.set(next);
-      if (e.deltaY < -2) setAutoFollow(false);
-    };
-    vp.addEventListener("wheel", onWheel, { passive: false });
-    return () => vp.removeEventListener("wheel", onWheel);
-  }, [y, minY]);
-
   const [showToLatest, setShowToLatest] = useState(false);
   useEffect(() => {
     const unsub = y.on("change", (v: number) => setShowToLatest(Math.abs(v - minY) > 6));
     return () => unsub();
   }, [y, minY]);
 
-  // ป้องกัน scroll jump ซ้อนกันด้วย flag
   const scrollAnimatingRef = useRef(false);
   const renderItem = (instKey: string, item: TimelineItem) => {
     switch (item.kind) {
@@ -578,7 +554,7 @@ function ScrollableChat({ scenarios }: { scenarios: Scenario[] }) {
                         scrollAnimatingRef.current = true;
                         setAutoFollow(true);
                         // ใช้ spring animation (ySmooth) เพื่อ scroll smooth
-                        ySmooth.set(minY);
+                        // ySmooth.set(minY);
                         pendingImageRef.current = false;
                         setTimeout(() => {
                           scrollAnimatingRef.current = false;
@@ -637,27 +613,12 @@ function ScrollableChat({ scenarios }: { scenarios: Scenario[] }) {
     <div className="group card-outer-bg card-outer-shadow relative overflow-hidden rounded-[25px] p-[1px] transition-all mx-auto max-w-6xl">
       <section className="card-inner-bg p-5 card-inner-blur relative z-10 h-full rounded-[24px] border-0">
         <div className="relative">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-10 z-10" />
-          <div ref={viewportRef} className="relative h-[560px] md:h-[600px] overflow-hidden pr-1 md:pr-2">
-            <motion.div
-              ref={contentRef}
-              layout
-              className="min-h-[560px] md:min-h-[600px] pb-14 pt-2 space-y-6"
-              style={{ y: ySmooth }}
-              drag="y"
-              dragElastic={0}
-              dragMomentum
-              dragTransition={{ power: 0.15, timeConstant: 280 }}
-              onDrag={(e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-                const cur = y.get();
-                const next = Math.max(Math.min(cur + info.delta.y, 0), minY);
-                y.set(next);
-                if (info.delta.y > 2) setAutoFollow(false);
-              }}
-              transition={{ layout: SPRING_LAYOUT }}
+          <div ref={viewportRef} className="relative h-[560px] md:h-[600px] overflow-auto pr-1 md:pr-2">
+            <div
+              className="pb-14 pt-2 space-y-6"
             >
               {items.map(({ instKey, item }) => renderItem(instKey, item))}
-            </motion.div>
+            </div>
           </div>
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 z-10" />

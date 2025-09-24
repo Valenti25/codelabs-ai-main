@@ -43,7 +43,7 @@ function FramedCTA({
     <div
       ref={wrapRef}
       onMouseMove={onMove}
-      className="group relative inline-flex overflow-hidden rounded-[14px] p-[1px] border-0 card-outer-bg card-outer-shadow"
+      className="group relative inline-flex overflow-hidden rounded-[14px] md:p-[1px] border-0 card-outer-bg card-outer-shadow"
     >
       <span
         className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
@@ -221,7 +221,7 @@ export default function AppNavbar() {
           {/* ขวา: CTA — มือถือให้อยู่ "กลางจอและกว้างๆ" */}
           <NavbarContent
             justify="end"
-            className="text-sm flex items-center justify-center mx-auto lg:mt-0 lg:h-auto lg:justify-end lg:bg-transparent lg:rounded-none lg:backdrop-blur-0"
+            className="flex items-center justify-center mx-auto"
           >
             {isMobile ? (
               <div

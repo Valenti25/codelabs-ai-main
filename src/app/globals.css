@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+/* โหลดฟอนต์ */
+@font-face {
+  font-family: "LINE Seed Sans TH App-Regular";
+  src: url("/fonts/LINESeedSansTH_W_Rg.woff2") format("woff2");
+  font-weight: 400;
+}
+:root {
+  --font-line-regular: "LINE Seed Sans TH App-Regular", Helvetica, sans-serif;
+}
+html,
+body {
+  background-color: black;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-line-regular);
+}
+@layer utilities {
+  .no-focus-ring
+    :is(
+      *:focus,
+      *:focus-visible,
+      [data-focus-visible="true"],
+      [data-focus="true"]
+    ) {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #4568dc, #b06ab3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 40% 40%; /* ขยายพื้นที่ไล่สี */
+  background-position: center; /* ให้สีคงอยู่ตรงกลาง */
+}
+
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.gradient-text-animated {
+  background: linear-gradient(
+    90deg,
+    #EDB279,
+    #B542D7,
+    #4514DC,
+    #B542D7,
+    #EDB279
+  );
+  background-size: 200% 100%;
+  background-position: 0% 50%;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  -webkit-text-stroke-width: 0.2px;
+  -webkit-text-stroke-color: rgba(255, 255, 255, 0.1);
+
+  animation: gradientMove 8s linear infinite alternate;
+}
+.gradient-text-animated2 {
+  background: linear-gradient(
+    90deg,
+    #EDB279,
+    #B542D7,
+    #4514DC,
+    #B542D7,
+    #EDB279
+  );
+  background-size: 200% 100%;
+  background-position: 0% 50%;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  animation: gradientMove 8s linear infinite alternate;
+}
+
+@keyframes gradientMove {
+  0%   { background-position:   0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+.card-outer-bg {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+}
+
+.card-outer-shadow {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.card-inner-bg {
+  background: rgba(0, 0, 0, 0.8);
+  background-image: radial-gradient(
+    60% 80% at 65% 45%,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.card-inner-blur {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE และ Edge */
+  scrollbar-width: none; /* Firefox */
+}
+@keyframes meteorEffect {
+  0% {
+    transform: rotate(215deg) translateX(0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(215deg) translateX(-500px);
+    opacity: 0;
+  }
+}
+
+@layer utilities {
+  .animate-meteorEffect {
+    animation: meteorEffect 2s linear infinite;
+  }
+}
+.opacity-0 {
+  opacity: 100%;
+}

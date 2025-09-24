@@ -1,0 +1,90 @@
+{
+  "hero": {
+    "title": "AI Innovation",
+    "subtitle": "From Raw Data to Real-World Impact",
+    "line1": "Next-Gen AI, from First Byte to Final Launch",
+    "line2": "End-to-End AI: From Data to Deployment, Done Right"
+  },
+  "landing": {
+    "heading": {
+      "smallTitle": "Apply AI",
+      "mainTitle": "AI Services & Strengths",
+      "description1": "We build AI solutions powered by your real-world data",
+      "description2": "— customized models that reflect actual business behavior, not just off-the-shelf algorithms."
+    },
+    "cards": [
+      {
+        "title": "AI for Modern Businesses",
+        "description": "Deliver fast, accurate, and human-like customer interactions — powered by AI trained on your business context."
+      },
+      {
+        "title": "AI for Data Dashboard",
+        "description": "Turn raw data into meaningful insights — faster, clearer, and more predictive than ever before."
+      },
+      {
+        "title": "AI for SME online",
+        "description": "Affordable, ready-to-use AI tools that help SMEs grow faster, sell smarter, and save time — no tech team needed."
+      }
+    ]
+  },
+  "poweringSearchEngine": {
+    "smallTitle": "AI for the Enterprise",
+    "mainTitle": "Powering Search engine",
+    "sectionTitle": "Search engine AI",
+    "description": "An AI-powered sales assistant that chats, qualifies, recommends, and helps close deals — 24/7."
+  },
+  "chatSaleByAI": {
+    "smallTitle": "AI for the Enterprise",
+    "mainTitle": "Chat sale by AI",
+    "description": "An AI-powered sales assistant that chats, qualifies, recommends, and helps close deals — 24/7."
+  },
+  "navbar": {
+    "menuItems": ["Product", "Pricing", "Case Studies","Resources"],
+    "buttonText": "Book a Demo"
+  },
+  "dropdown": {
+    "products": {
+      "Build AI": {
+        "description": "Codelabs Data Platform",
+        "logo": "/svg/icon16.svg",
+        "subItems": [
+          { "name": "For Enterprise", "description": "Smart data platform", "logo": "/svg/icon1.svg" },
+          { "name": "For SME, Startup", "description": "Lightweight and efficient", "logo": "/svg/icon2.svg" },
+          { "name": "For E-commerce", "description": "Boost sales with AI", "logo": "/svg/icon3.svg" },
+          { "name": "For Sale", "description": "Sell smarter, faster, and better", "logo": "/svg/icon4.svg" },
+          { "name": "For Human Resource (HR)", "description": "Simplify HR tasks", "logo": "/svg/icon5.svg" },
+          { "name": "For Government", "description": "Smart solutions for digital", "logo": "/svg/icon6.svg" },
+          { "name": "For Financial", "description": "Manage your finances", "logo": "/svg/icon7.svg" },
+          { "name": "For Medical, Healthcare", "description": "Manage patient data", "logo": "/svg/icon8.svg" }
+        ]
+      },
+      "Apply AI": {
+        "description": "Codelabs Platform-AI",
+        "logo": "/svg/icon17.svg",
+        "subItems": [
+          { "name": "Chat Platform", "description": "Smart data platform", "logo": "/svg/icon9.svg" },
+          { "name": "AI-powered E-commerce Sales", "description": "Boost online sales", "logo": "/svg/icon10.svg" },
+          { "name": "Smart Data Platform", "description": "Boost sales with data", "logo": "/svg/icon11.svg" },
+          { "name": "Stock Management", "description": "Optimize inventory", "logo": "/svg/icon12.svg" },
+          { "name": "Dashboard", "description": "Real-time insights powered", "logo": "/svg/icon13.svg" },
+          { "name": "Promotion CRM", "description": "Expert who helps business", "logo": "/svg/icon14.svg" },
+          { "name": "CRM System", "description": "Boost engagement", "logo": "/svg/icon15.svg" }
+        ]
+      }
+    },
+    "resources": [
+    {
+      "name": "About",
+      "logo": "/svg/icon18.svg"
+    },
+    {
+      "name": "Contact us",
+      "logo": "/svg/icon19.svg"
+    },
+    {
+      "name": "Blog",
+      "logo": "/svg/icon20.svg"
+    }
+  ]
+  }
+}

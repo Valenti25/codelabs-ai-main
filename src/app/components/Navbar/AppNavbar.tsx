@@ -43,7 +43,7 @@ function FramedCTA({
     <div
       ref={wrapRef}
       onMouseMove={onMove}
-      className="group relative inline-flex overflow-hidden rounded-[14px] md:p-[1px] border-0 card-outer-bg card-outer-shadow"
+      className="group relative inline-flex overflow-hidden rounded-[14px] p-[1px] border-0 card-outer-bg card-outer-shadow"
     >
       <span
         className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
@@ -145,23 +145,21 @@ export default function AppNavbar() {
       <div style={{ height: headerH }} aria-hidden />
 
       {/* header fixed ติดจอ */}
-      <div ref={fixedWrapRef} className="fixed left-0 right-0 top-0 z-[60]">
+      <div ref={fixedWrapRef} className="fixed left-0 py-5 md:py-3 md:pt-14 right-0 top-0 z-[60]">
         <Navbar
           maxWidth="full"
           classNames={{
             base:
-              "relative z-50 backdrop-blur-none py-4 px-1 md:px-12 lg:py-10 transition-all duration-300",
+              "relative z-50 backdrop-blur-none px-1 transition-all duration-300",
             wrapper: [
               "!px-0 sm:!px-2 md:!px-4 lg:!px-6",
               "transition-all duration-300",
-              // ⬇️ หุบเฉพาะคอนเทนเนอร์ (เดสก์ท็อปแคบลง, มือถือยังเกือบเต็ม)
               scrolled
                 ? "max-w-[calc(100%-12px)] mx-auto lg:max-w-7xl"
                 : "max-w-full mx-auto lg:max-w-[88rem]",
             ].join(" "),
           }}
         >
-          {/* ซ้าย: โลโก้ (เดสก์ท็อป) */}
           <NavbarContent justify="start" className="hidden lg:flex text-white">
             <NavbarBrand>
               <Image
@@ -229,11 +227,9 @@ export default function AppNavbar() {
               <div
                 ref={menuRef}
                 className={[
-                  // อยู่กลางจอ + กว้างๆ (แทบเต็ม) + เว้นขอบข้างเล็กน้อย
-                  "relative w-full max-w-[calc(100%-12px)] mx-auto px-2",
-                  "flex items-center justify-center gap-3 w-full ",
+                  "relative",
+                  "flex items-center max-w-xs min-w-sm justify-between w-full",
                   "transition-all duration-300",
-                  // เริ่มต้น: โปร่งใสไม่เบลอ → เมื่อเลื่อน: มีพื้นหลังจาง + เบลอ + เส้นขอบ
                   scrolled
                     ? "h-14 rounded-full bg-white/10 backdrop-blur-md ring-1 ring-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.12)]"
                     : "h-14 rounded-full bg-transparent backdrop-blur-0 ring-0"
@@ -246,26 +242,28 @@ export default function AppNavbar() {
                   height={45}
                   className="shrink-0"
                 />
-                <FramedCTA className="h-8 w-10 px-16 py-2 text-xs">
-                  {content.navbar.buttonText}
-                </FramedCTA>
-                <Button
-                  onClick={() => {
-                    setActiveDropdown(null);
-                    setIsMenuOpen(true);
-                  }}
-                  isIconOnly
-                  className="bg-transparent p-2 mr-1 text-white shrink-0"
-                >
-                  <Image
-                    width={28}
-                    height={28}
-                    src="./svg/hamberger.svg"
-                    alt="Open menu"
-                    className="object-contain"
-                  />
-                </Button>
+                <div className="flex items-center justify-center">
+                  <FramedCTA className="h-8 w-10 px-16 py-2 text-xs">
+                    {content.navbar.buttonText}
+                  </FramedCTA>
+                  <Button
+                    onClick={() => {
+                      setActiveDropdown(null);
+                      setIsMenuOpen(true);
+                    }}
+                    isIconOnly
+                    className="bg-transparent p-2 text-white shrink-0"
+                  >
+                    <Image
+                      width={28}
+                      height={28}
+                      src="./svg/hamberger.svg"
+                      alt="Open menu"
+                      className="object-contain"
+                    />
+                  </Button>
 
+                </div>
                 <MobileMenu
                   isMenuOpen={isMenuOpen}
                   setIsMenuOpen={setIsMenuOpen}

@@ -18,7 +18,7 @@ export default function ResourcesDropdown({
   handleMouseLeave,
 }: Props) {
   return (
-    <div className="pointer-events-none absolute top-0 right-0 left-0 z-40 flex justify-center pt-20">
+    <div className="pointer-events-none fixed left-0 right-0 z-[70] flex justify-center">
       <div className="pointer-events-auto relative">
         <div className="absolute mt-1 ml-28 flex items-center justify-center rounded-lg p-[2px] backdrop-blur-md">
           <div

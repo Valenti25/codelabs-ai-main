@@ -43,17 +43,43 @@ export default function MobileMenu({
   content,
 }: MobileMenuProps) {
   // ล็อกการสกรอลล์พื้นหลังเมื่อเมนูเปิด
+  // ล็อกสกอลล์พื้นหลังโดยไม่รีเซ็ตตำแหน่ง (iOS/ทุกเบราว์เซอร์โอเค)
   useEffect(() => {
     if (!isMenuOpen) return;
-    const prevHtml = document.documentElement.style.overflow;
-    const prevBody = document.body.style.overflow;
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
+
+    const body = document.body;
+    const html = document.documentElement;
+    const scrollY = window.scrollY;
+
+    // เก็บค่าเดิมไว้
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      overflow: body.style.overflow,
+      htmlOverflowY: html.style.overflowY,
+    };
+
+    // ล็อกให้อยู่กับที่ โดยรักษาตำแหน่งสกอลล์ปัจจุบัน
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    html.style.overflowY = "scroll";
+
     return () => {
-      document.documentElement.style.overflow = prevHtml;
-      document.body.style.overflow = prevBody;
+      // คืนค่าเหมือนเดิม แล้วเลื่อนกลับไปตำแหน่งก่อนเปิด
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      html.style.overflowY = prev.htmlOverflowY;
+
+      const y = -parseInt(body.style.top || "0", 10) || scrollY;
+      window.scrollTo(0, y);
     };
   }, [isMenuOpen]);
+
 
   return (
     <AnimatePresence initial={false} mode="wait">
@@ -77,18 +103,28 @@ export default function MobileMenu({
             }
           `}</style>
 
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-md" />
+          <div className="absolute inset-0 " />
 
-          <div className="relative z-10 flex h-full w-full flex-col p-6">
+          <div className="relative z-10 bg-black backdrop-blur-md h-full w-full p-5 mt-4">
             <button
               onClick={() => {
                 setIsMenuOpen(false);
                 setActiveDropdown(null);
               }}
-              className="self-end p-1 text-white"
               aria-label="Close menu"
+              className="absolute text-white"
+              style={{
+                top: "calc(env(safe-area-inset-top, 0px) + 16px)",
+                right: "calc(env(safe-area-inset-right, 0px) + 16px)",
+              }}
             >
-              <Image width={20} height={20} src="/svg/x-symbol.svg" alt="close icon" className="object-contain" />
+              <Image
+                width={20}
+                height={20}
+                src="/svg/x-symbol.svg"
+                alt="close icon"
+                priority   // กันกระพริบ/โหลดช้า
+              />
             </button>
 
             <motion.div
@@ -109,9 +145,8 @@ export default function MobileMenu({
                 >
                   <span>Product</span>
                   <span
-                    className={`transform transition-transform duration-200 ${
-                      activeDropdown === "products" ? "rotate-180" : ""
-                    }`}
+                    className={`transform transition-transform duration-200 ${activeDropdown === "products" ? "rotate-180" : ""
+                      }`}
                   >
                     <Image width={20} height={20} src="/svg/dropdown-arrow.svg" alt="dropdown-arrow" className="object-contain" />
                   </span>
@@ -198,9 +233,8 @@ export default function MobileMenu({
                 >
                   <span>Resources</span>
                   <span
-                    className={`transform transition-transform duration-200 ${
-                      activeDropdown === "resources" ? "rotate-180" : ""
-                    }`}
+                    className={`transform transition-transform duration-200 ${activeDropdown === "resources" ? "rotate-180" : ""
+                      }`}
                   >
                     <Image width={20} height={20} src="/svg/dropdown-arrow.svg" alt="dropdown-arrow" className="object-contain" />
                   </span>

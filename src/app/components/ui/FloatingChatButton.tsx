@@ -15,7 +15,6 @@ export default function FloatingChatButton({
 }: Props) {
   const [open, setOpen] = useState(false);
 
-  // ปิดเมื่อคลิกนอก
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -26,6 +25,7 @@ export default function FloatingChatButton({
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
+
   const items: Array<{
     key: "line" | "messenger";
     href: string;
@@ -33,28 +33,18 @@ export default function FloatingChatButton({
     hoverSrc: string;
     alt: string;
   }> = [
-    {
-      key: "line",
-      href: lineHref,
-      defaultSrc: "/svg/line.svg",
-      hoverSrc: "/svg/line-hover.svg",
-      alt: "LINE",
-    },
-    {
-      key: "messenger",
-      href: messengerHref,
-      defaultSrc: "/images/messenger.png",
-      hoverSrc: "/images/messenger-hover.png",
-      alt: "messenger",
-    },
+    { key: "line", href: lineHref, defaultSrc: "/svg/line.svg", hoverSrc: "/svg/line-hover.svg", alt: "LINE" },
+    { key: "messenger", href: messengerHref, defaultSrc: "/images/messenger.png", hoverSrc: "/images/messenger-hover.png", alt: "messenger" },
   ];
 
   return (
     <div
       ref={rootRef}
-      className={`fixed z-[9999] md:left-[10%] left-[5%] bottom-[max(16px,env(safe-area-inset-bottom))] md:bottom-[max(24px,env(safe-area-inset-bottom))]`}
+      className={
+        // ⬇️ เปลี่ยนเป็นขวา
+        "fixed z-[9999] md:right-[10%] right-[5%] bottom-[max(16px,env(safe-area-inset-bottom))] md:bottom-[max(24px,env(safe-area-inset-bottom))]"
+      }
     >
-      {/* เมนูที่ 'ยืดขึ้น' แกน Y (ไอคอน 2 วง) */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -62,9 +52,11 @@ export default function FloatingChatButton({
             animate={{ opacity: 1, scaleY: 1, y: 0 }}
             exit={{ opacity: 0, scaleY: 0.6, y: 8 }}
             transition={{ type: "spring", stiffness: 520, damping: 32 }}
-            className="absolute bottom-full mb-3 origin-bottom"
+            // ⬇️ ให้เมนูชิดขวาและยืดขึ้นจากขอบขวา
+            className="absolute bottom-full right-0 mb-3 origin-bottom-right"
           >
-            <div className="flex flex-col items-start gap-2">
+            {/* ⬇️ จัดเรียงแนวตั้งชิดขวา */}
+            <div className="flex flex-col items-end gap-2">
               {items.map((it, idx) => (
                 <motion.a
                   key={it.key}
@@ -77,7 +69,6 @@ export default function FloatingChatButton({
                   aria-label={it.alt}
                   className="group relative overflow-hidden rounded-full p-[1px] card-outer-bg card-outer-shadow"
                 >
-                  {/* วงกลมด้านใน (UI เดิม) */}
                   <span className="relative z-10 rounded-full card-inner-bg card-inner-blur border border-white/10 p-3 md:p-3.5 flex items-center justify-center hover:bg-white/5 transition">
                     <IconSwap
                       defaultSrc={it.defaultSrc}
@@ -107,7 +98,7 @@ export default function FloatingChatButton({
   );
 }
 
-/** ไอคอนที่ "แทนที่รูป" ตอน hover (ไม่ซ้อนรูป) */
+/** เปลี่ยนรูปตอน hover (ไม่ซ้อน) */
 function IconSwap({
   defaultSrc,
   hoverSrc,
@@ -120,7 +111,6 @@ function IconSwap({
   size?: number;
 }) {
   const [hovered, setHovered] = useState(false);
-
   return (
     <img
       src={hovered ? hoverSrc : defaultSrc}
@@ -134,6 +124,7 @@ function IconSwap({
       onBlur={() => setHovered(false)}
       onTouchStart={() => setHovered(true)}
       onTouchEnd={() => setHovered(false)}
+      draggable={false}
     />
   );
 }

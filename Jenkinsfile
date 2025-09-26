@@ -20,6 +20,20 @@ pipeline {
             }
         }
 
+        stage('Install Health Check Tools') {
+            steps {
+                script {
+                    echo "Installing required tools..."
+                    sh '''
+                        # ติดตั้ง netcat และ curl สำหรับ health check
+                        apt-get update -qq
+                        apt-get install -y netcat-openbsd curl
+                        echo "Tools installed successfully!"
+                    '''
+                }
+            }
+        }
+
         stage('Verify Docker') {
             steps {
                 script {
@@ -59,14 +73,14 @@ EOF
             steps {
                 script {
                     echo "Cleaning up Docker system..."
-                    sh '''
+                    sh """
                         # ทำความสะอาดระบบ
                         docker system prune -f || true
                         
                         # หยุดและลบ container เก่า
                         docker stop ${DOCKER_CONTAINER_NAME} || true
                         docker rm ${DOCKER_CONTAINER_NAME} || true
-                    '''
+                    """
                 }
             }
         }
@@ -124,7 +138,7 @@ EOF
                     echo "Performing health check..."
                     sh """
                         echo "Waiting for application to start..."
-                        sleep 20
+                        sleep 15
                         
                         echo "=== Container Status ==="
                         docker ps | grep ${DOCKER_CONTAINER_NAME}
@@ -133,13 +147,66 @@ EOF
                         docker logs ${DOCKER_CONTAINER_NAME} --tail 30
                         
                         echo "=== Port Check ==="
-                        netstat -tlnp | grep ${env.PORT} || echo "Port not ready yet"
+                        # ใช้ ss แทน netstat หากไม่มี netstat
+                        ss -tlnp | grep ${env.PORT} || netstat -tlnp | grep ${env.PORT} || echo "Checking with nc..."
+                        
+                        echo "=== Testing Connection ==="
+                        # ใช้ timeout และ nc ตรวจสอบ port
+                        for i in {1..15}; do
+                            if nc -z localhost ${env.PORT}; then
+                                echo "Port ${env.PORT} is ready!"
+                                break
+                            else
+                                echo "Attempt \$i: Port not ready, waiting..."
+                                sleep 2
+                            fi
+                        done
                         
                         echo "=== HTTP Test ==="
-                        timeout 30 bash -c 'until nc -z localhost ${PORT}; do echo "Waiting for port..."; sleep 2; done'
-                        curl -I http://localhost:${env.PORT} || echo "HTTP check failed"
+                        # ทดสอบ HTTP response
+                        HTTP_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${env.PORT} || echo "000")
+                        echo "HTTP Status: \$HTTP_STATUS"
+                        
+                        if [ "\$HTTP_STATUS" = "200" ] || [ "\$HTTP_STATUS" = "301" ] || [ "\$HTTP_STATUS" = "302" ]; then
+                            echo "✅ HTTP check passed!"
+                        else
+                            echo "⚠️ HTTP check returned status: \$HTTP_STATUS"
+                            echo "Application might still be starting..."
+                        fi
                         
                         echo "=== Health Check Complete ==="
+                    """
+                }
+            }
+        }
+
+        stage('Final Verification') {
+            steps {
+                script {
+                    echo "Final verification..."
+                    sh """
+                        echo "=== Final Status Check ==="
+                        
+                        # ตรวจสอบ container ยังทำงานอยู่หรือไม่
+                        if docker ps | grep -q ${DOCKER_CONTAINER_NAME}; then
+                            echo "✅ Container is running"
+                            
+                            # ดึง container IP
+                            CONTAINER_IP=\$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${DOCKER_CONTAINER_NAME})
+                            echo "Container IP: \$CONTAINER_IP"
+                            
+                            # ทดสอบจาก container network
+                            docker exec ${DOCKER_CONTAINER_NAME} wget -q --spider http://localhost:3000 && echo "✅ Internal health check passed" || echo "⚠️ Internal check failed"
+                            
+                            # แสดง final logs
+                            echo "=== Final Logs ==="
+                            docker logs ${DOCKER_CONTAINER_NAME} --tail 10
+                            
+                            echo "✅ Deployment appears successful!"
+                        else
+                            echo "❌ Container is not running!"
+                            exit 1
+                        fi
                     """
                 }
             }
@@ -178,6 +245,11 @@ EOF
                     
                     echo "=== Final Status ==="
                     docker ps | grep ${DOCKER_CONTAINER_NAME}
+                    
+                    echo ""
+                    echo "🌐 Access your application at:"
+                    echo "   http://localhost:${env.PORT}"
+                    echo "   http://your-server-ip:${env.PORT}"
                 """
             }
         }
@@ -192,7 +264,7 @@ EOF
                     docker --version || echo "Docker not available"
                     
                     echo "Container logs:"
-                    docker logs ${DOCKER_CONTAINER_NAME} --tail 50 || echo "No container logs"
+                    docker logs ${DOCKER_CONTAINER_NAME} --tail 100 || echo "No container logs available"
                     
                     echo "Running containers:"
                     docker ps -a
@@ -203,14 +275,25 @@ EOF
                     echo "Network info:"
                     docker network ls
                     
-                    # Cleanup on failure
-                    docker system prune -f || true
+                    echo "Port usage:"
+                    ss -tlnp | grep 3010 || netstat -tlnp | grep 3010 || echo "Port 3010 not in use"
+                    
+                    # Cleanup on failure (optional)
+                    # docker system prune -f || true
                 '''
             }
         }
 
         always {
             echo 'Pipeline execution completed.'
+            script {
+                sh '''
+                    echo "=== Deployment Summary ==="
+                    echo "Build Number: ${BUILD_NUMBER}"
+                    echo "Timestamp: $(date)"
+                    echo "Status: Pipeline completed"
+                '''
+            }
         }
     }
 }

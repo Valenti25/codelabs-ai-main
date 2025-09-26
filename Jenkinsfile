@@ -8,15 +8,8 @@ pipeline {
     environment {
         PORT = '3010'
         HOST = 'localhost'
-
-        // API Configuration
-        NEXT_PUBLIC_API_URL = 'http://localhost:3001/api'
         NEXT_PUBLIC_SITE_URL = 'http://localhost:3010'
-
-        // JWT Configuration
-        JWT_SECRET = 'your-jwt-secret-key-here'
-        NEXTAUTH_URL = 'http://localhost:3010'
-        NEXTAUTH_SECRET = 'your-nextauth-secret-here'
+        NODE_ENV = 'production'
     }
 
     stages {
@@ -27,36 +20,53 @@ pipeline {
             }
         }
 
-        stage('Debug - Check Files') {
+        stage('Verify Docker') {
             steps {
                 script {
-                    echo "Current directory contents:"
-                    sh 'ls -la'
-                    echo "Looking for Dockerfile:"
-                    sh 'find . -name "Dockerfile" -type f'
-                    echo "Looking for package.json:"
-                    sh 'find . -name "package.json" -type f'
+                    echo "Verifying Docker installation..."
+                    sh '''
+                        docker --version
+                        docker info
+                        echo "Docker is ready!"
+                    '''
                 }
             }
         }
 
-        stage('Docker System Cleanup') {
+        stage('Create Environment File') {
+            steps {
+                script {
+                    echo "Creating environment configuration..."
+                    sh '''
+                        # สร้าง .env file
+                        cat > .env << EOF
+NODE_ENV=production
+PORT=3000
+NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+EOF
+                        
+                        echo "Environment file created:"
+                        cat .env
+                        
+                        echo "Project structure:"
+                        ls -la
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Cleanup') {
             steps {
                 script {
                     echo "Cleaning up Docker system..."
-                    sh 'docker system prune -f'
-                    sh 'docker builder prune -f'
-                    sh 'docker image prune -a -f'
-                    sh 'docker volume prune -f'
-                }
-            }
-        }
-
-        stage('Setup Network') {
-            steps {
-                script {
-                    echo "Setting up Docker network: ${DOCKER_NETWORK_NAME}"
-                    sh "docker network create ${DOCKER_NETWORK_NAME} || echo 'Network already exists'"
+                    sh '''
+                        # ทำความสะอาดระบบ
+                        docker system prune -f || true
+                        
+                        # หยุดและลบ container เก่า
+                        docker stop ${DOCKER_CONTAINER_NAME} || true
+                        docker rm ${DOCKER_CONTAINER_NAME} || true
+                    '''
                 }
             }
         }
@@ -64,44 +74,72 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo "Building Docker image..."
-                    echo "Current working directory: \$(pwd)"
-
-                    // Build with no cache to avoid corrupted layers
+                    echo "Building Docker image: ${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                    
                     sh """
-                        docker build --no-cache --pull \\
-                        --build-arg NEXT_PUBLIC_API_URL=${env.NEXT_PUBLIC_API_URL} \\
+                        # Build image
+                        docker build --no-cache \\
+                        --build-arg NODE_ENV=production \\
                         --build-arg NEXT_PUBLIC_SITE_URL=${env.NEXT_PUBLIC_SITE_URL} \\
-                        --build-arg JWT_SECRET=${env.JWT_SECRET} \\
-                        --build-arg NEXTAUTH_URL=${env.NEXTAUTH_URL} \\
-                        --build-arg NEXTAUTH_SECRET=${env.NEXTAUTH_SECRET} \\
                         -t ${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER} \\
+                        -t ${DOCKER_IMAGE_NAME}:latest \\
                         .
+                        
+                        echo "=== Build completed! ==="
+                        docker images | grep ${DOCKER_IMAGE_NAME}
                     """
                 }
             }
         }
 
-        stage('Deploy Container') {
+        stage('Deploy Application') {
             steps {
                 script {
-                    echo "Deploying container: ${DOCKER_CONTAINER_NAME}"
-
-                    sh "docker stop ${DOCKER_CONTAINER_NAME} || true"
-                    sh "docker rm ${DOCKER_CONTAINER_NAME} || true"
-
+                    echo "Deploying application on port ${env.PORT}..."
+                    
                     sh """
+                        # สร้าง network
+                        docker network create ${DOCKER_NETWORK_NAME} || echo 'Network already exists'
+                        
+                        # รัน container
                         docker run -d \\
-                        --name ${DOCKER_CONTAINER_NAME} \\
-                        -p ${env.PORT}:3000 \\
-                        --restart always \\
-                        -e NEXT_PUBLIC_API_URL=${env.NEXT_PUBLIC_API_URL} \\
-                        -e NEXT_PUBLIC_SITE_URL=${env.NEXT_PUBLIC_SITE_URL} \\
-                        -e JWT_SECRET=${env.JWT_SECRET} \\
-                        -e NEXTAUTH_URL=${env.NEXTAUTH_URL} \\
-                        -e NEXTAUTH_SECRET=${env.NEXTAUTH_SECRET} \\
-                        --network ${DOCKER_NETWORK_NAME} \\
-                        ${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}
+                            --name ${DOCKER_CONTAINER_NAME} \\
+                            -p ${env.PORT}:3000 \\
+                            --restart unless-stopped \\
+                            -e NODE_ENV=production \\
+                            -e NEXT_PUBLIC_SITE_URL=${env.NEXT_PUBLIC_SITE_URL} \\
+                            --network ${DOCKER_NETWORK_NAME} \\
+                            ${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}
+                        
+                        echo "=== Container started! ==="
+                        docker ps | grep ${DOCKER_CONTAINER_NAME}
+                    """
+                }
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                script {
+                    echo "Performing health check..."
+                    sh """
+                        echo "Waiting for application to start..."
+                        sleep 20
+                        
+                        echo "=== Container Status ==="
+                        docker ps | grep ${DOCKER_CONTAINER_NAME}
+                        
+                        echo "=== Container Logs ==="
+                        docker logs ${DOCKER_CONTAINER_NAME} --tail 30
+                        
+                        echo "=== Port Check ==="
+                        netstat -tlnp | grep ${env.PORT} || echo "Port not ready yet"
+                        
+                        echo "=== HTTP Test ==="
+                        timeout 30 bash -c 'until nc -z localhost ${PORT}; do echo "Waiting for port..."; sleep 2; done'
+                        curl -I http://localhost:${env.PORT} || echo "HTTP check failed"
+                        
+                        echo "=== Health Check Complete ==="
                     """
                 }
             }
@@ -110,10 +148,16 @@ pipeline {
         stage('Cleanup Old Images') {
             steps {
                 script {
-                    sh "docker image prune -f"
-                    // Keep only last 3 builds
+                    echo "Cleaning up old images..."
                     sh """
-                        docker images ${DOCKER_IMAGE_NAME} --format 'table {{.Tag}}' | tail -n +2 | sort -nr | tail -n +4 | xargs -r docker rmi ${DOCKER_IMAGE_NAME}: || true
+                        # ลบ dangling images
+                        docker image prune -f || true
+                        
+                        # เก็บแค่ 3 versions ล่าสุด
+                        docker images ${DOCKER_IMAGE_NAME} --format "table {{.Tag}}" | tail -n +2 | sort -nr | tail -n +4 | xargs -r -I {} docker rmi ${DOCKER_IMAGE_NAME}:{} || true
+                        
+                        echo "=== Current Images ==="
+                        docker images | grep ${DOCKER_IMAGE_NAME} || echo "No images found"
                     """
                 }
             }
@@ -122,13 +166,51 @@ pipeline {
 
     post {
         success {
-            echo 'Codelabs AI deployment completed successfully!'
+            echo '🎉 Deployment completed successfully!'
+            script {
+                sh """
+                    echo "================================"
+                    echo "🚀 Codelabs AI is running!"
+                    echo "📍 URL: http://localhost:${env.PORT}"
+                    echo "🐳 Container: ${DOCKER_CONTAINER_NAME}"
+                    echo "🏷️  Image: ${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                    echo "================================"
+                    
+                    echo "=== Final Status ==="
+                    docker ps | grep ${DOCKER_CONTAINER_NAME}
+                """
+            }
         }
 
         failure {
-            echo 'Codelabs AI deployment failed!'
-            // Additional cleanup on failure
-            sh 'docker system prune -f || true'
+            echo '❌ Deployment failed!'
+            script {
+                sh '''
+                    echo "=== Debug Information ==="
+                    
+                    echo "Docker version:"
+                    docker --version || echo "Docker not available"
+                    
+                    echo "Container logs:"
+                    docker logs ${DOCKER_CONTAINER_NAME} --tail 50 || echo "No container logs"
+                    
+                    echo "Running containers:"
+                    docker ps -a
+                    
+                    echo "Available images:"
+                    docker images
+                    
+                    echo "Network info:"
+                    docker network ls
+                    
+                    # Cleanup on failure
+                    docker system prune -f || true
+                '''
+            }
+        }
+
+        always {
+            echo 'Pipeline execution completed.'
         }
     }
 }

@@ -2,7 +2,7 @@
 import { Card, CardBody, Image } from "@nextui-org/react";
 import { useState, useRef } from "react";
 import content from "@/locales/en/home.json";
-
+import DiagonalPromoTapes from "@/app/components/ui/DiagonalPromoTapes";
 const data = {
   landing: {
     cards: [
@@ -82,6 +82,7 @@ const CardComponent = ({ title, description, image }) => {
           </p>
         </CardBody>
       </Card>
+      
     </div>
   );
 };
@@ -107,7 +108,7 @@ export default function LandingPage() {
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-1 gap-8 lg:px-6 pt-8 lg:grid-cols-3 lg:pt-12">
+      <div className="grid mb-12 grid-cols-1 gap-8 lg:px-6 pt-8 lg:grid-cols-3 lg:pt-12">
         {landingContent.cards.map(({ title, description }, i) => (
           <CardComponent
             key={i}
@@ -116,6 +117,9 @@ export default function LandingPage() {
             image={imageData[i]}
           />
         ))}
+      </div>
+      <div className="">
+      <DiagonalPromoTapes/>
       </div>
     </section>
   );

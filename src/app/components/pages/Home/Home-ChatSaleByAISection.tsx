@@ -613,7 +613,7 @@ function ScrollableChat({ scenarios }: { scenarios: Scenario[] }) {
     <div className="group card-outer-bg card-outer-shadow relative overflow-hidden rounded-[25px] p-[1px] transition-all mx-auto max-w-6xl">
       <section className="card-inner-bg p-5 card-inner-blur relative z-10 h-full rounded-[24px] border-0">
         <div className="relative">
-          <div ref={viewportRef} className="relative h-[560px] md:h-[600px] overflow-auto pr-1 md:pr-2">
+          <div ref={viewportRef} className="relative h-[560px] md:h-[600px] overflow-auto scrollbar-hide pr-1 md:pr-2">
             <div
               className="pb-14 pt-2 space-y-6"
             >

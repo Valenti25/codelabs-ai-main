@@ -7,13 +7,15 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import ModelRot from "../../ModelsObject/ModelRobot";
 import SplashCursor from "@/app/components/ui/SplashCursor";
 import Footer from "./Home-Footer";
-/* ---------- Capsule + Hover Light ---------- */
+import { submitContactLead } from "@/services/contact.service";
+
+// ---------- Capsule + Hover Light ----------
 function HoverPill({
   children,
   className = "",
   rounded = "rounded-full",
   glowRadius = 240,
-  overflow = "hidden", 
+  overflow = "hidden",
 }: {
   children: React.ReactNode;
   className?: string;
@@ -67,7 +69,7 @@ function HoverPill({
   );
 }
 
-/* ---------- Field shells ---------- */
+// ---------- Field shells ----------
 function FieldShell({
   children,
   small = false,
@@ -91,13 +93,13 @@ function FieldShell({
   );
 }
 
-/* ---------- inputs ---------- */
+// ---------- inputs ----------
 function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
       className={[
-        "w-full bg-transparent text-sm md:text-lg leading-relaxed outline-none",
+        "w-full bg-transparent text-sm leading-relaxed outline-none md:text-lg",
         "text-white placeholder:text-white/35",
         props.className || "",
       ].join(" ")}
@@ -125,7 +127,7 @@ function PhoneInput(
   );
 }
 
-/* ---------- Textarea ใหญ่แบบคอมเมนต์ (auto-resize) ---------- */
+// ---------- Textarea ใหญ่แบบคอมเมนต์ (auto-resize) ----------
 function BigTextarea({
   name = "message",
   placeholder = "Write your comment…",
@@ -161,7 +163,7 @@ function BigTextarea({
       onInput={autosize}
       rows={minRows}
       className={[
-        "w-full resize-none bg-transparent text-sm md:text-lg leading-relaxed outline-none",
+        "w-full resize-none bg-transparent text-sm leading-relaxed outline-none md:text-lg",
         "text-white placeholder:text-white/35",
         "px-5 py-4 md:px-6 md:py-5",
         className,
@@ -170,14 +172,14 @@ function BigTextarea({
   );
 }
 
-/* ---------- Subject Select (portal + blur + slide-down) ---------- */
+// ---------- Subject Select (portal + blur + slide-down) ----------
 function SubjectSelect({
   options,
   value,
   onChange,
   placeholder = "Subject",
 }: {
-  options: { key: string; label: string }[];
+  options: ReadonlyArray<{ key: string; label: string }>;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
@@ -221,7 +223,7 @@ function SubjectSelect({
         <FieldShell small>
           <div
             className={[
-              "w-full text-sm md:text-lg leading-relaxed",
+              "w-full text-sm leading-relaxed md:text-lg",
               value ? "text-white" : "text-white/35",
             ].join(" ")}
           >
@@ -282,41 +284,86 @@ function SubjectSelect({
   );
 }
 
-/* ---------- หน้าเต็ม ---------- */
-export default function Page() {
+// ---------- mapping subject -> service (สำหรับ backend/admin) ----------
+const SUBJECT_OPTIONS = [
+  { key: "general", label: "General Inquiry" },
+  { key: "quote", label: "Project Quote" },
+  { key: "partnership", label: "Partnership" },
+  { key: "support", label: "Support" },
+  { key: "careers", label: "Careers" },
+  { key: "other", label: "Other" },
+] as const;
+
+type SubjectKey = (typeof SUBJECT_OPTIONS)[number]["key"];
+
+const SUBJECT_TO_SERVICE: Record<
+  SubjectKey,
+  "sales" | "support" | "partnership" | "general"
+> = {
+  general: "general",
+  quote: "sales",
+  partnership: "partnership",
+  support: "support",
+  careers: "general", 
+  other: "general",
+};
+
+export default function UnlockAIPowerforYourBusiness() {
   const [subject, setSubject] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const SUBJECT_OPTIONS = [
-    { key: "general", label: "General Inquiry" },
-    { key: "quote", label: "Project Quote" },
-    { key: "partnership", label: "Partnership" },
-    { key: "support", label: "Support" },
-    { key: "careers", label: "Careers" },
-    { key: "other", label: "Other" },
-  ];
-
-  const handleSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
+    if (isSubmitting) return;
+
+    const form = e.currentTarget;
+    const data = new FormData(form);
+
     const name = String(data.get("name") || "").trim();
     const email = String(data.get("email") || "").trim();
     const message = String(data.get("message") || "").trim();
-    const subjectValue = String(data.get("subject") || "").trim();
+    const subjectKey = String(data.get("subject") || "").trim() as SubjectKey;
     const phoneNum = String(data.get("phone") || "").trim();
 
-    if (!name || !email || !message || !subjectValue) {
+    if (!name || !email || !message || !subjectKey) {
       alert("Please fill in your name, email, subject, and message.");
       return;
     }
 
-    console.log({
-      name,
-      email,
-      phone: phoneNum,
-      subject: subjectValue,
-      message,
-    });
-    alert("Message sent!");
+    const subjectMeta =
+      SUBJECT_OPTIONS.find((o) => o.key === subjectKey) ?? SUBJECT_OPTIONS[0];
+    const service = SUBJECT_TO_SERVICE[subjectMeta.key] ?? "general";
+
+    const timezone =
+      typeof window !== "undefined"
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone
+        : "Asia/Bangkok";
+
+    try {
+      setIsSubmitting(true);
+
+      await submitContactLead({
+        formType: "message",
+        service,
+        name,
+        email,
+        phone: phoneNum || undefined,
+        company: null,
+        message: `[Subject: ${subjectMeta.label}] ${message}`,
+        timezone,
+        source: "website",
+      });
+
+      alert("Message sent successfully. We will get back to you soon.");
+
+      form.reset();
+      setSubject("");
+    } catch (err) {
+      console.error("contact form error:", err);
+      alert("Failed to send message. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -328,9 +375,9 @@ export default function Page() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative isolate mx-auto w-full max-w-7xl overflow-visible" 
+        className="relative isolate mx-auto w-full max-w-7xl overflow-visible"
       >
-        <div className="pointer-events-none mx-auto items-center justify-center flex max-w-3xl">
+        <div className="pointer-events-none mx-auto flex max-w-3xl items-center justify-center">
           <ModelRot />
         </div>
 
@@ -416,9 +463,10 @@ export default function Page() {
             >
               <button
                 type="submit"
-                className="relative z-10 px-12 py-3.5 text-sm md:text-lg font-medium"
+                disabled={isSubmitting}
+                className="relative z-10 px-12 py-3.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-70 md:text-lg"
               >
-                Send
+                {isSubmitting ? "Sending..." : "Send"}
               </button>
             </HoverPill>
           </div>
@@ -451,7 +499,7 @@ export default function Page() {
               <HoverPill
                 key={i}
                 rounded="rounded-3xl"
-                className="md:min-h-[140px] min-h-[50px]"
+                className="min-h-[50px] md:min-h-[140px]"
               >
                 <a
                   href={href}

@@ -47,11 +47,11 @@ img {
 .gradient-text-animated {
   background: linear-gradient(
     90deg,
-    #EDB279,
-    #B542D7,
-    #4514DC,
-    #B542D7,
-    #EDB279
+    #edb279,
+    #b542d7,
+    #4514dc,
+    #b542d7,
+    #edb279
   );
   background-size: 200% 100%;
   background-position: 0% 50%;
@@ -68,11 +68,11 @@ img {
 .gradient-text-animated2 {
   background: linear-gradient(
     90deg,
-    #EDB279,
-    #B542D7,
-    #4514DC,
-    #B542D7,
-    #EDB279
+    #edb279,
+    #b542d7,
+    #4514dc,
+    #b542d7,
+    #edb279
   );
   background-size: 200% 100%;
   background-position: 0% 50%;
@@ -85,8 +85,12 @@ img {
 }
 
 @keyframes gradientMove {
-  0%   { background-position:   0% 50%; }
-  100% { background-position: 100% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
 }
 
 .card-outer-bg {
@@ -146,4 +150,18 @@ img {
 }
 .opacity-0 {
   opacity: 100%;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: #fff !important;
+  color: #fff !important;
+  caret-color: #fff;
+  transition: background-color 9999s ease-out 0s !important;
 }
